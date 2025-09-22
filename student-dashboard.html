@@ -1,0 +1,23 @@
+<h2>Student Dashboard</h2>
+<div id="studentData"></div>
+
+<script>
+  async function loadStudents() {
+    const response = await fetch("http://localhost:5000/students");
+    const data = await response.json();
+
+    let html = "<table border='1'><tr><th>ID</th><th>Name</th><th>Subject</th><th>Marks</th></tr>";
+    data.forEach(s => {
+      html += `<tr>
+                 <td>${s.id}</td>
+                 <td>${s.name}</td>
+                 <td>${s.subject}</td>
+                 <td>${s.marks}</td>
+               </tr>`;
+    });
+    html += "</table>";
+
+    document.getElementById("studentData").innerHTML = html;
+  }
+  loadStudents();
+</script>
