@@ -1,14 +1,259 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Student Learning Outcomes - Login</title>
+  <meta charset="utf-8" />
+  <title>Student Learning Outcomes System</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; background: #e9f3ff; padding: 30px; }
+    .container { background: #fff; padding: 20px; border-radius: 12px; width: 420px; margin: auto; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    .hidden { display: none; }
+    .subject-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+    .subject-row input { padding:8px; border-radius:6px; border:1px solid #ccc; }
+    .subject-row button.remove { background:#e74c3c; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer;}
+    button { background:#2ecc71; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; margin:6px 4px; }
+    button.secondary { background:#3498db; }
+    button.ghost { background:#95a5a6; }
+    #teacherMsg { margin-top:10px; min-height:20px; color: #155724; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; font-size:14px; }
+    th { background:#f0f6fb; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Welcome to Student Learning Outcomes System</h2>
-    <button onclick="window.location.href='admin.html'">Login as Teacher</button>
-    <button onclick="window.location.href='student.html'">Login as Student</button>
+  <!-- LOGIN -->
+  <div class="container" id="loginPage">
+    <h2 style="text-align:center">Welcome to SLO System</h2>
+    <div style="text-align:center; margin-top:14px;">
+      <button onclick="showTeacher()">Login as Teacher</button>
+      <button class="secondary" onclick="showStudent()">Login as Student</button>
+    </div>
   </div>
+
+  <!-- TEACHER -->
+  <div class="container hidden" id="teacherDashboard">
+    <h2 style="text-align:center">Teacher Dashboard</h2>
+
+    <form id="studentForm">
+      <input id="id" placeholder="Student ID" required style="width:100%; margin-bottom:8px; padding:10px; border-radius:6px;"/>
+      <input id="name" placeholder="Student Name" required style="width:100%; margin-bottom:8px; padding:10px; border-radius:6px;"/>
+
+      <div id="subjectsContainer">
+        <!-- initial subject row inserted by JS -->
+      </div>
+
+      <div style="text-align:center; margin-top:8px;">
+        <button type="button" id="addSubjectBtn" class="secondary">+ Add Subject</button>
+      </div>
+
+      <div style="text-align:center; margin-top:14px;">
+        <button type="submit">Save Student</button>
+        <button type="button" class="ghost" id="resetBtn">Reset</button>
+      </div>
+    </form>
+
+    <p id="teacherMsg"></p>
+    <div style="text-align:center; margin-top:8px;">
+      <button onclick="goBack()">⬅ Back to Login</button>
+    </div>
+  </div>
+
+  <!-- STUDENT VIEW -->
+  <div class="container hidden" id="studentDashboard">
+    <h2 style="text-align:center">Student Dashboard</h2>
+    <div id="studentData">Loading student data...</div>
+    <div style="text-align:center; margin-top:8px;">
+      <button onclick="goBack()">⬅ Back to Login</button>
+    </div>
+  </div>
+
+<script>
+  // --- UI helpers ---
+  function showTeacher() {
+    hideAll();
+    document.getElementById('teacherDashboard').classList.remove('hidden');
+    resetFormToSingleSubject(); 
+    document.getElementById('teacherMsg').innerText = '';
+  }
+  function showStudent() {
+    hideAll();
+    document.getElementById('studentDashboard').classList.remove('hidden');
+    loadStudents();
+  }
+  function goBack() {
+    hideAll();
+    document.getElementById('loginPage').classList.remove('hidden');
+  }
+  function hideAll() {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('teacherDashboard').classList.add('hidden');
+    document.getElementById('studentDashboard').classList.add('hidden');
+  }
+
+  // --- Dynamic subject rows ---
+  const subjectsContainer = document.getElementById('subjectsContainer');
+  const addSubjectBtn = document.getElementById('addSubjectBtn');
+  addSubjectBtn.addEventListener('click', addSubjectRow);
+
+  function createSubjectRow(subjectVal = '', marksVal = '') {
+    const row = document.createElement('div');
+    row.className = 'subject-row';
+
+    const subjInput = document.createElement('input');
+    subjInput.type = 'text';
+    subjInput.className = 'subject';
+    subjInput.placeholder = 'Subject';
+    subjInput.value = subjectVal;
+    subjInput.style.flex = '1';
+
+    const marksInput = document.createElement('input');
+    marksInput.type = 'number';
+    marksInput.className = 'marks';
+    marksInput.placeholder = 'Marks';
+    marksInput.value = marksVal;
+    marksInput.style.width = '90px';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove';
+    removeBtn.innerText = 'x';
+    removeBtn.addEventListener('click', () => row.remove());
+
+    row.appendChild(subjInput);
+    row.appendChild(marksInput);
+    row.appendChild(removeBtn);
+
+    return row;
+  }
+
+  function addSubjectRow() {
+    subjectsContainer.appendChild(createSubjectRow());
+  }
+
+  function resetFormToSingleSubject() {
+    // clear inputs and set one blank subject row
+    document.getElementById('studentForm').reset();
+    subjectsContainer.innerHTML = '';
+    subjectsContainer.appendChild(createSubjectRow());
+  }
+
+  // init one row on load
+  resetFormToSingleSubject();
+
+  // --- Save / Update Student (POST/PUT) ----
+
+  document.getElementById('studentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('teacherMsg').innerText = 'Saving...';
+
+    const id = document.getElementById('id').value.trim();
+    const name = document.getElementById('name').value.trim();
+    if (!id || !name) {
+      document.getElementById('teacherMsg').innerText = 'ID and Name are required.';
+      return;
+    }
+
+    // collect subjects
+    const rows = Array.from(document.querySelectorAll('.subject-row'));
+    const subjects = [];
+    for (const r of rows) {
+      const subj = r.querySelector('.subject').value.trim();
+      const mk = r.querySelector('.marks').value.trim();
+      if (subj) subjects.push({ subject: subj, marks: mk === '' ? null : Number(mk) });
+    }
+    if (subjects.length === 0) {
+      document.getElementById('teacherMsg').innerText = 'Add at least one subject.';
+      return;
+    }
+
+    try {
+      // Try GET /students/:id to check existence
+      const baseUrl = 'http://localhost:5000/students';
+      const checkRes = await fetch(`${baseUrl}/${encodeURIComponent(id)}`);
+      if (checkRes.ok) {
+        // exists -> update: merge subjects (update existing subject marks or add new subject)
+        const existing = await checkRes.json();
+
+        // ensure subjects array exists
+        existing.subjects = existing.subjects || [];
+
+        for (const s of subjects) {
+          const found = existing.subjects.find(x => x.subject.toLowerCase() === s.subject.toLowerCase());
+          if (found) {
+            found.marks = s.marks; // update marks
+          } else {
+            existing.subjects.push(s); // add new subject
+          }
+        }
+
+        // PUT update
+        const putRes = await fetch(`${baseUrl}/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(existing)
+        });
+
+        if (putRes.ok) {
+          document.getElementById('teacherMsg').innerText = `✅ Updated ${existing.name} (${id}).`;
+          resetFormToSingleSubject();
+        } else {
+          document.getElementById('teacherMsg').innerText = '❌ Failed to update student.';
+        }
+
+      } else {
+        // not exists -> create new
+        const newStudent = { id, name, subjects };
+        const postRes = await fetch('http://localhost:5000/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newStudent)
+        });
+        if (postRes.ok || postRes.status === 201) {
+          document.getElementById('teacherMsg').innerText = `🆕 New student ${name} created.`;
+          resetFormToSingleSubject();
+        } else {
+          document.getElementById('teacherMsg').innerText = '❌ Failed to create student.';
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('teacherMsg').innerText = '⚠️ Could not connect to backend. Start server & check CORS.';
+    }
+  });
+
+  // Reset button action
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    resetFormToSingleSubject();
+    document.getElementById('teacherMsg').innerText = '';
+  });
+
+  // --- Load students for Student Dashboard ---
+  async function loadStudents() {
+    const container = document.getElementById('studentData');
+    container.innerHTML = 'Loading...';
+    try {
+      const res = await fetch('http://localhost:5000/students');
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        container.innerHTML = '<p>No students yet.</p>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>ID</th><th>Name</th><th>Subjects (marks)</th></tr></thead><tbody>';
+      data.forEach(s => {
+        const subs = (s.subjects || []).map(x => `${x.subject}: ${x.marks}`).join('<br>');
+        html += `<tr><td>${s.id}</td><td>${s.name}</td><td>${subs}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = '<p style="color:crimson">Could not load students. Start backend or check console.</p>';
+    }
+  }
+</script>
 </body>
 </html>
+
+

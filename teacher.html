@@ -1,0 +1,15 @@
+<form id="marksForm">
+  <input type="text" id="name" placeholder="Student Name" required>
+  
+  <div id="subjectsContainer">
+    <!-- Subject rows will be added dynamically -->
+    <div class="subject-row">
+      <input type="text" class="subject" placeholder="Subject" required>
+      <input type="number" class="marks" placeholder="Marks" required>
+      <button type="button" onclick="this.parentElement.remove()">❌</button>
+    </div>
+  </div>
+
+  <button type="button" onclick="addSubjectRow()">➕ Add Subject</button>
+  <button type="submit">Save Student</button>
+</form>

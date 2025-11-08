@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f0f6ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 {
+      margin-top: 20px;
+    }
+    .chart-container {
+      width: 600px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 Student Marks Graph</h2>
+  <div class="chart-container">
+    <canvas id="marksChart"></canvas>
+  </div>
+
+  <script>
+    // Sample data (replace with your actual student data)
+    const students = [
+      {
+        name: "SHIVA",
+        marks: { JAVA: 89, DBMS: 90, "PROBABILITY & STATISTICS": 85, DSA: 90, DAA: 75, ENGLISH: 65 }
+      },
+      {
+        name: "TAYAR",
+        marks: { JAVA: 89, DBMS: 67, "PROBABILITY & STATISTICS": 76, DSA: 78, DAA: 90, ENGLISH: 80 }
+      },
+      {
+        name: "PHANI",
+        marks: { JAVA: 96, DBMS: 90, "PROBABILITY & STATISTICS": 67, DSA: 78, DAA: 100, ENGLISH: 67 }
+      },
+      {
+        name: "MOHANA",
+        marks: { JAVA: 78, DBMS: 100, "PROBABILITY & STATISTICS": 75, DSA: 89, DAA: 90, ENGLISH: 78 }
+      }
+    ];
+
+    const subjects = ["JAVA", "DBMS", "PROBABILITY & STATISTICS", "DSA", "DAA", "ENGLISH"];
+
+    const data = {
+      labels: subjects,
+      datasets: students.map((student, i) => ({
+        label: student.name,
+        data: subjects.map(sub => student.marks[sub]),
+        borderWidth: 2,
+        fill: false,
+        tension: 0.3,
+        borderColor: `hsl(${i * 90}, 70%, 50%)`
+      }))
+    };
+
+    const config = {
+      type: "line", // you can also try 'bar'
+      data: data,
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: "Student Performance Comparison"
+          },
+          legend: {
+            position: "bottom"
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    };
+
+    new Chart(document.getElementById("marksChart"), config);
+  </script>
+</body>
+</html>

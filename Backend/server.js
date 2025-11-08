@@ -18,30 +18,40 @@ mongoose.connect(
 .then(() => console.log("✅ MongoDB Atlas connected successfully"))
 .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// Define a Student schema
-const studentSchema = new mongoose.Schema({
-  id: Number,          
-  name: String,
+// =======================
+// Schema & Model
+// =======================
+
+// Subject sub-schema
+const subjectSchema = new mongoose.Schema({
   subject: String,
   marks: Number
 });
 
-// Create a model
+// Student schema
+const studentSchema = new mongoose.Schema({
+  id: String,
+  name: String,
+  subjects: [subjectSchema]   // multiple subjects per student
+});
+
+// Model
 const Student = mongoose.model("Student", studentSchema);
+
+// =======================
+// Routes
+// =======================
 
 // Root endpoint
 app.get("/", (req, res) => {
   res.send("Welcome to the student data server! This is the root endpoint.");
 });
 
-// =======================
-// CRUD APIs
-// =======================
-
-// CREATE → Add a new student (/students)
+// CREATE → Add a new student
 app.post("/students", async (req, res) => {
   try {
-    const student = new Student(req.body);
+    const { id, name, subjects } = req.body;
+    const student = new Student({ id, name, subjects });
     await student.save();
     console.log("📌 Saved student:", student);
     res.status(201).send({ message: "✅ Student added", data: student });
@@ -50,32 +60,20 @@ app.post("/students", async (req, res) => {
   }
 });
 
-// CREATE → Add a new student (/add) for your frontend
-app.post("/add", async (req, res) => {
-  try {
-    const student = new Student(req.body);
-    await student.save();
-    console.log("📌 Saved student via /add:", student);
-    res.status(201).send({ message: "✅ Student added via /add", data: student });
-  } catch (err) {
-    res.status(400).send({ error: err.message });
-  }
-});
-
-// READ → Get all students
+// Get all students
 app.get("/students", async (req, res) => {
   try {
-    const students = await Student.find();
-    res.send(students);
+    const students = await Student.find();  // () compulsory
+    res.json(students);
   } catch (err) {
-    res.status(500).send({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
 // READ ONE → Get student by id
 app.get("/students/:id", async (req, res) => {
   try {
-    const student = await Student.findOne({ id: Number(req.params.id) });
+    const student = await Student.findOne({ id: req.params.id });
     if (!student) return res.status(404).send({ error: "Student not found" });
     res.send(student);
   } catch (err) {
@@ -87,7 +85,7 @@ app.get("/students/:id", async (req, res) => {
 app.put("/students/:id", async (req, res) => {
   try {
     const student = await Student.findOneAndUpdate(
-      { id: Number(req.params.id) },
+      { id: req.params.id },
       req.body,
       { new: true }
     );
@@ -103,7 +101,7 @@ app.put("/students/:id", async (req, res) => {
 // DELETE → Delete student by id
 app.delete("/students/:id", async (req, res) => {
   try {
-    const student = await Student.findOneAndDelete({ id: Number(req.params.id) });
+    const student = await Student.findOneAndDelete({ id: req.params.id });
     if (!student) {
       return res.status(404).send({ error: "Student not found" });
     }
@@ -112,8 +110,31 @@ app.delete("/students/:id", async (req, res) => {
     res.status(500).send({ error: err.message });
   }
 });
+// Delete all studentscd
+app.delete("/students", async (req, res) => {
+  try {
+    await Student.deleteMany({});  // Clear entire collection
+    res.json({ message: "All students deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// Start the server
+// Delete single student by ID
+app.delete("/students/:id", async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+    res.json({ message: "Student deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// =======================
+// Start server
+// =======================
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

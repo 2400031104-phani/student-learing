@@ -1,43 +1,3 @@
-<h2>Student Dashboard</h2>
-<div id="studentData"></div>
-
-<script>
-  async function loadStudents() {
-    const response = await fetch("http://localhost:5000/students");
-    const data = await response.json();
-
-    let html = "<table border='1' cellspacing='0' cellpadding='5'>";
-    html += "<tr><th>ID</th><th>Name</th><th>Subjects & Marks</th></tr>";
-
-    data.forEach(s => {
-      // oka student ki subjects array ni loop cheddam
-      let subjectsHtml = "<table border='1' cellspacing='0' cellpadding='3'>";
-      subjectsHtml += "<tr><th>Subject</th><th>Marks</th></tr>";
-
-      s.subjects.forEach(sub => {
-        subjectsHtml += `<tr>
-                           <td>${sub.name}</td>
-                           <td>${sub.marks}</td>
-                         </tr>`;
-      });
-
-      subjectsHtml += "</table>";
-
-      html += `<tr>
-                 <td>${s.id}</td>
-                 <td>${s.name}</td>
-                 <td>${subjectsHtml}</td>
-               </tr>`;
-    });
-
-    html += "</table>";
-
-    document.getElementById("studentData").innerHTML = html;
-  }
-
-  loadStudents();
-  
-</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,5 +150,3 @@
   </script>
 </body>
 </html>
-
-
